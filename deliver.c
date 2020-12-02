@@ -43,6 +43,9 @@ void *receiveMessage(){
     struct message * serverPacket = (struct message * ) malloc (sizeof (struct message));
     //serverPacket= NULL;
     //bool one=true;
+    char sessionIDInvite[MAXBUFLEN], person[MAXBUFLEN];
+    char * packetData = (char * )serverPacket -> data;
+    char * token;
 
     while(1){
         
@@ -52,41 +55,53 @@ void *receiveMessage(){
         printPacket(serverPacket);
 
         switch(serverPacket->type){
-             case 5:
-            printf("JN_ACK: Successfully join session\n"); 
-            inSession=true;
-            break;
-        case 6: 
-            printf("JN_NAK: Unsuccessful join session, reason: %s\n", serverPacket->data);
-            break;
-        case 9: 
-            printf("NS_ACK: Successful new session\n");
-            inSession=true;
-            break;
-        case 12: 
-            printf("QU_ACK: Users and sessions: %s\n", serverPacket->data);
-            break;
-        case 13:
-            printf("LEAVE_ACK: Successful leave session\n");
-            break;
-        case 14: 
-            printf("NS_NAK: Unsuccessful create session, reasons: %s\n", serverPacket -> data);
-            break;
-        case 15:
-            printf("LEAVE_NAK: Unsuccessful leave session, reason: %s\n", serverPacket -> data);
-            break;
-        case 16:
-            printf("EXIT_ACK: Successful exit\n");
-            inSession = false;//if you've logged out, you're obvsly not in session anymore
-            break;
-        case 17:
-            printf("EXIT_NAK: Unsuccessful exit, reason: %s\n", serverPacket -> data);
-            break;
-        default:
-            printf("\n\n\n----------Unknown packet received!--------\n");
-            break;  
-        }   
-
+            case 5:
+                printf("JN_ACK: Successfully join session\n"); 
+                inSession=true;
+                break;
+            case 6: 
+                printf("JN_NAK: Unsuccessful join session, reason: %s\n", serverPacket->data);
+                break;
+            case 9: 
+                printf("NS_ACK: Successful new session\n");
+                inSession=true;
+                break;
+            case 12: 
+                printf("QU_ACK: Users and sessions: %s\n", serverPacket->data);
+                break;
+            case 13:
+                printf("LEAVE_ACK: Successful leave session\n");
+                break;
+            case 14: 
+                printf("NS_NAK: Unsuccessful create session, reasons: %s\n", serverPacket -> data);
+                break;
+            case 15:
+                printf("LEAVE_NAK: Unsuccessful leave session, reason: %s\n", serverPacket -> data);
+                break;
+            case 16:
+                printf("EXIT_ACK: Successful exit\n");
+                inSession = false;//if you've logged out, you're obvsly not in session anymore
+                break;
+            case 17:
+                printf("EXIT_NAK: Unsuccessful exit, reason: %s\n", serverPacket -> data);
+                break;
+            case 20:
+                token = strtok(packetData, ",");
+                strcpy(person, token );
+                /* walk through other tokens */
+                while( token != NULL ) {
+                    strcpy(sessionIDInvite, token);
+                    token = strtok(NULL, ",");
+                }
+                printf("%s invites %s to join session: %s\n",(char *) serverPacket -> source, person, sessionIDInvite);
+                break;
+            case 21:
+                printf("INVITE_NAK: Unsuccessful invite, reason: %s\n", serverPacket -> data);
+                break;
+            default:
+                printf("\n\n\n----------Unknown packet received!--------\n");
+                break;  
+        }  
     }
     printf("\n");
     free(serverPacket);
