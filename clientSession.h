@@ -5,56 +5,6 @@
 
 
 
-typedef struct clientStruct{
-    int clientFD;
-    unsigned char clientID[MAXBUFLEN];
-    char pw[MAXBUFLEN];
-    bool loggedIn;
-    //currentSess will be the last joinsession's session
-    unsigned char currentSess[MAXBUFLEN];
-    unsigned char sessionID[MAX_ARR_SIZE][MAXBUFLEN];
-    int nextAvailIndex;
-    pthread_t tid;
-    bool quit;
-    struct clientStruct * next;
-}User;
-
-typedef struct session{
-    char sessionID[MAXBUFLEN];
-    //User * clientsInSession;
-    int numClients;
-    int clientsInSess[MAX_ARR_SIZE];    //store the acceptFD's
-    int nextAvailIndex;
-    struct session *next;
-}Session;
-
-//global client and session lists
-User * clientList = NULL; //head
-User * lastClient = NULL;
-
-Session *sessionList=NULL;
-Session *lastSession=NULL;
-
-void printIntArrar(int arr[], int size){
-    for(int i = 0; i < size; i++){
-        printf("arr[i]: %d\n", arr[i]);
-    }
-    return;
-}
-
-int  returnInviteFD(char *inviteID){
-   User *temp =  clientList;
-    while(temp!=NULL){
-
-        if(strcmp((const char *) inviteID,(const char *)temp->clientID)==0){
-            printf("Valid User ID\n");
-            return temp->clientFD;
-        }
-        temp= temp->next;
-    }
-    if(temp==NULL) return -1;
-}
-
 void printClientStruct(User *currentClient){
     printf("clientFD: %d\n", currentClient -> clientFD);
     printf("clientID: %s\n", currentClient -> clientID);
@@ -80,6 +30,44 @@ void printClientList(User * n){
     }
     return;
 }
+
+
+
+void printIntArrar(int arr[], int size){
+    for(int i = 0; i < size; i++){
+        printf("arr[i]: %d\n", arr[i]);
+    }
+    return;
+}
+
+int returnInviteFD(char *clientID, char * whyFailed){    
+    printf("\n\nThis is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+
+    printClientList(clientList);
+    int inviteFD;
+    printf("Invite ID: %s\n", clientID);
+
+    User * temp = clientList;
+    if(temp == NULL){
+        char failedReason[MAXBUFLEN]="There's no one logged in!\n";
+        strcpy(whyFailed,failedReason);
+        return -1;
+    }
+    while(temp != NULL){
+        printf("In while in checkClientID\n");
+        printf("Checking : %s\n",temp -> clientID);
+        if(strcmp((char *)temp -> clientID,clientID)==0){
+            return temp -> clientFD;
+        }
+        ///if(temp -> next != NULL)temp = temp -> next;
+        temp = temp -> next;
+    }
+    char failedReason[MAXBUFLEN]="Can't find that invitee!\n";
+    strcpy(whyFailed,failedReason);
+    return -1;
+    
+}
+
 
 void printSessionStruct(Session *currentSession){
     printf("sessionID: %s\n", currentSession -> sessionID);
@@ -131,7 +119,7 @@ bool checkClientID(unsigned char * clientID){
 
 bool addToClientList(User *currentClient){
     //if user has already logged in: return false
-    if(currentClient -> loggedIn == true || checkClientID(currentClient -> clientID)== true){
+    if(checkClientID(currentClient -> clientID)== true){
         return false;
     }
 
@@ -145,6 +133,7 @@ bool addToClientList(User *currentClient){
         lastClient = currentClient;
         currentClient -> next = NULL;
     }else{
+        printf("Adding to end of list\n");
         lastClient -> next = currentClient;
         lastClient = currentClient;
         currentClient -> next = NULL;
@@ -190,7 +179,25 @@ bool removeFromClientList(User * cliToRemove){
 
 
 
-
+bool sessionIsValid(char sessID[]){
+    bool validSessID=false;
+    Session * currSess = sessionList;
+    while(currSess!= NULL){
+        printf("Checking if session is valid\n");
+        //if not found, continue to check
+        if(strcmp(currSess->sessionID,sessID)!=0)currSess = currSess -> next;
+        else{
+            //check if client already in this session. If so, return true with the appropriate message
+            validSessID = true;
+            return true;
+        }
+    }
+    return false;
+    // if(currSess == NULL){
+    //     return false;
+    // }
+    // return true;
+}
 
 bool joinSession(char sessID[], User * client, char * reasonForFailure){ 
     printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
@@ -259,6 +266,76 @@ bool joinSession(char sessID[], User * client, char * reasonForFailure){
     memcpy(client -> currentSess, (unsigned char *)sessID, MAXBUFLEN);
     return true;
 }
+
+// bool joinSession(char sessID[], User * client, char * reasonForFailure){ 
+//     printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+//     //1.check if session exists in the complete session list
+//     // Session * currSess = sessionList;
+//     // bool validSessID=false;
+//     // while(currSess!= NULL){
+//     //     //if not found, continue to check
+//     //     if(strcmp(currSess->sessionID,sessID)!=0)currSess = currSess -> next;
+//     //     else{
+//     //         //check if client already in this session. If so, return true with the appropriate message
+//     //         validSessID = true;
+//     //         break;
+//     //     }
+//     // }
+
+//     bool validSessID = sessionIsValid(sessID);
+    
+//     //session doesn't exist || never found session
+//     if (validSessID==false){
+//         char whyFailed[] = "Can't join session: session doesn't exist!\n";
+//         strcpy(reasonForFailure, whyFailed);
+//         return false;
+//     }
+
+//     //not logged in
+//     if(client -> loggedIn==false){
+//         char whyFailed[] = "Can't join session: you are not logged in!\n";
+//         strcpy(reasonForFailure, whyFailed);
+//         return false;
+//     }
+   
+//     //already in this session
+//     //for(int i = 0; i < client -> nextAvailIndex; i++){
+//         printf("Checking for if it's already in this session\n");
+//        if(strcmp((char*)client -> currentSess ,sessID)==0){
+//             char whyFailed[] = "Can't join session: you are already in this session!\n";
+//             strcpy(reasonForFailure, whyFailed);
+//             return false;
+//         }
+//     //}
+
+
+//     //currentSession now points to the session the user wants to join
+//     //add to session's clients
+//     //currSess should be at the right session node
+//     //if not already present in the user's session list and not in session's user list, update
+// //else just change currentSess
+//     //bool updatedCurrSess = false;
+//     for(int i = 0; i < client -> nextAvailIndex; i++){
+//         //check if this sessID is already in the user's session list
+//         if(strcmp((char*)client -> sessionID[i],sessID)==0 && memcmp(client -> sessionID[i], client -> currentSess, MAXBUFLEN)!=0){
+//             memcpy(client -> currentSess, (unsigned char *)sessID, MAXBUFLEN);
+//             //updatedCurrSess = true;
+//             return true;
+//             //break;
+//         }
+//     }
+//     //Add to the session's list of clients
+//     currSess -> clientsInSess[currSess -> nextAvailIndex] = client -> clientFD;
+//     (currSess->nextAvailIndex)++;
+//     (currSess->numClients)++;
+//     //add to the client's list of sessions
+//     memcpy(client -> sessionID[client -> nextAvailIndex], (unsigned char *)sessID,MAXBUFLEN);
+//     (client -> nextAvailIndex)++;
+//     printf("currSess -> nextAvailIndex: %d\n", currSess->nextAvailIndex);
+//     printf("client -> nextAvailIndex: %d\n", client -> nextAvailIndex);
+//     memcpy(client -> currentSess, (unsigned char *)sessID, MAXBUFLEN);
+//     return true;
+// }
 
 
 //If this is the first session made, join this session

@@ -1,3 +1,4 @@
+
 #include "clientSession.h"
 #include "packet.h" 
   
@@ -182,8 +183,8 @@ struct message processPacket(struct message incomingPacket, User *current){
                      printf("DDDDDDDDDDDD\n");
                      printf("Client's sessipn ID: %s\n", current->currentSess);
                      printf("Temp sess ID: %s\n", tempSess->sessionID);
-                     printf("String compare: %d\n", strcmp(current->currentSess, tempSess->sessionID));
-                     if(strcmp(current->currentSess, tempSess->sessionID)==0){
+                     printf("String compare: %d\n", strcmp((char *)current->currentSess, tempSess->sessionID));
+                     if(strcmp((char *)current->currentSess, tempSess->sessionID)==0){
                          printf("They are the same!\n");
                         printf("--------------111-----------\n");
                         printf("Find session!\n");
@@ -215,34 +216,61 @@ struct message processPacket(struct message incomingPacket, User *current){
             break;
         case 19://Invite
             printf("Invite!\n");
-            struct message sendInvite;
-            struct message * ptrToSendInvite;
-             char *inviteClientFD, *inviteSessionID;
-                char *token= strtok(incomingPacket.data, " ");
-                strcpy(inviteClientFD, token);
-                token= strtok(NULL, " ");
-                strcpy(inviteSessionID, token);
-                printf("inviteClientID: %s\t", inviteClientFD);
-                printf("inviteSessionID: %s\t", inviteSessionID);
-                int tempFD= atoi(inviteClientFD);
-                //check if Client exist, if yes, get their fd
-            if (tempFD==-1){
-                printf("User not found!\n");
+            //int a;
+            // //take out the name of invitee first
+            // printf("data: %s\n", (char*)incomingPacket.data);
+            
+            // char * packetData = (char * )incomingPacket.data;
+            // // char * token;
+            // // char * sessionOfInvite;
+            // // token = strtok(packetData, ",");
+            // // /* walk through other tokens */
+            // // printf("token: %s\n", token);
+            // // //token is user to send, convert to fd 
+            
+            // // if( token != NULL ) {
+            // //     strcpy(sessionOfInvite, token);
+            // //     token = strtok(NULL, ",");
+            // // }
+            // char * token;
+            // char * sessionOfInvite;
+            // sscanf(packetData,"%s,%s", token, sessionOfInvite);
+            // printf("token : %s\n", token);
+            // printf("sessionOfInvite: %s\n", sessionOfInvite);
+
+            char sessionIDInvite[MAXBUFLEN], person[MAXBUFLEN];
+            char * packetData = (char * )incomingPacket.data;
+            char * token;
+            token = strtok(packetData, ",");
+            strcpy(person, token );
+            /* walk through other tokens */
+            while( token != NULL ) {
+                strcpy(sessionIDInvite, token);
+                token = strtok(NULL, ",");
             }
-            else{
-            printf("Writing to the other person......\n");
-            sprintf(sendInvite.data, "Client ID: %s sent you an invite to join session : %s", current->clientID, inviteSessionID);
-            int sendBytes = write(tempFD, ptrToSendInvite, sizeof(struct message));
-           
+            printf("person: %s\n", person);
+            printf("ses: %s\n", sessionIDInvite);
+
+            char * inviteReasonForFail = malloc(sizeof(char));
+            int fdToSend = returnInviteFD(person,inviteReasonForFail);
+            bool sessionValid = sessionIsValid(sessionIDInvite);
+            printf("sessionValid: %d\n", sessionValid);
+            if(fdToSend == -1){
+                //invalid: nak  
+                packetToSend = makeInviteNakPacket(current, inviteReasonForFail);//send it to inviter
+                //need to send this to the client
+            }else if(sessionValid != 1){
+                strcpy(inviteReasonForFail, "This session doesn't exist.\n");
+                packetToSend = makeInviteNakPacket(current, inviteReasonForFail);//send it to inviter
+            }else{
+                packetToSend = makeInviteAckPacket(current, incomingPacket, sessionIDInvite);//want to sent it to invitee
+                int inviteClientBytes = write(fdToSend, &packetToSend, sizeof(struct message));
+ 
             }
-             packetToSend = makeInvitePacketAck(current->clientID, tempFD);
-            message=false;
-        break;
+            break;
         default:  
             message=false;
-        break;
-
-        
+            break;
     }
 
     printf("Exiting process packet, client looks like:\n");
@@ -251,7 +279,8 @@ struct message processPacket(struct message incomingPacket, User *current){
 }
 
 void *handle(void *tempUser){
-        User *newUser = (User *) tempUser;
+        User *newUser = malloc(sizeof(User));
+        newUser = (User *) tempUser;
         struct message * incomingPacket;
         struct message packetToSend;
         struct message * ptrToPacketToSend;

@@ -5,8 +5,7 @@ bool inSession= false;
 int sockfd; 
 bool quit=false;
 pthread_t receive_thread;
-clock_t writeTime;
-clock_t waitTime;
+
 
 void loginMessageReceived();
 void *receiveMessage();
@@ -79,7 +78,6 @@ void *receiveMessage(){
         case 16:
             printf("EXIT_ACK: Successful exit\n");
             inSession = false;//if you've logged out, you're obvsly not in session anymore
-            
             break;
         case 17:
             printf("EXIT_NAK: Unsuccessful exit, reason: %s\n", serverPacket -> data);
@@ -97,7 +95,7 @@ void *receiveMessage(){
 }
 
 int main(int argc, char *argv[]){
-    writeTime = clock();
+    
     //int sockfd;
     struct addrinfo servAddr;
     struct addrinfo *servAddrPtr;
@@ -118,24 +116,14 @@ int main(int argc, char *argv[]){
     }
 
     while(!quit){
-        //waitTime = clock();
         printf("\n\n****************************\n");
         printf("Enter your prompts below: \n");
         char input[1000],singleWordCommands[1000];
         char fwOfCommand[15], excess[1000];
         enum clientCommands fwEnum; 
-        waitTime = clock();
-        printf("waitTime : %lu\n", waitTime);
-        printf("writeTIme : %lu\n", writeTime);
-        printf("@@@@@@@@@@@timeDif : %lf\n", ((double)(waitTime - writeTime))/CLOCKS_PER_SEC);
-        if((  ((float)(waitTime - writeTime)) /CLOCKS_PER_SEC)>50){
-            quit = true;
-            break;
-        }
         fgets (input, 1000, stdin);
         printf("input: %s\n", input);
-
-        char *stuff;
+        
         //send the message directly to server.
         //take out the first word of input to decide what to do with it
          
@@ -144,15 +132,6 @@ int main(int argc, char *argv[]){
 
         printf("Excess: %s\n", excess);
         fwEnum = convertToEnum(fwOfCommand);
-        /*
-        if(strcmp(excess, "")==0){
-            //no second work, just take input with / removed
-            ///memmove(fwOfCommand, fwOfCommand+1, strlen(fwOfCommand));
-            fwEnum = convertToEnum(fwOfCommand);
-        }else{
-            fwEnum = convertToEnum(fwOfCommand); 
-        }
-        */
          
         printf("enum: %d\n",fwEnum);
  
@@ -186,34 +165,7 @@ int main(int argc, char *argv[]){
                     }
 
                     printf("creating socket\n");
-
-                    // struct timeval timeout;      
-                    // timeout.tv_sec = 10000;
-                    // timeout.tv_usec = 0;
-
-                    // int timeout = 10;m
-                    
-
-
                     sockfd = socket(servAddrPtr->ai_family, servAddrPtr->ai_socktype, servAddrPtr->ai_protocol);
-
-
-                    // if (setsockopt (sockfd, SOL_TCP, SO_REUSEADDR, (char *)&timeout,sizeof(timeout)) < 0){
-                    //     perror("1setsockopt failed\n");
-                    //     printf("(*(*(*(*(*(*(*(*(*(*(*(\n");
-                    //     quit = true;
-                    //     break;
-                    // }
-                        
-
-                    // if (setsockopt (sockfd, SOL_TCP, SO_REUSEADDR, (char *)&timeout,sizeof(timeout)) < 0){
-                    //     perror("2setsockopt failed\n");
-                    //     printf("(*(*(*(*(*(*(*(*(*(*(*(\n");
-
-                    //     quit = true;
-                    //     break;
-                    // }
-                        
 
                     printf("sockfd: %d\n", sockfd); 
                     if (sockfd < 1){
@@ -296,25 +248,44 @@ int main(int argc, char *argv[]){
 
           //quit
             case 6:
-            quit = true;
-            printf("------Quitting--------\n");
-            packetToSend= makeQuitPacket(clientIDStr);
-            //close(sockfd);
-            break;
+                quit = true;
+                printf("------Quitting--------\n");
+                packetToSend= makeQuitPacket(clientIDStr);
+                //close(sockfd);
+                break;
 
             case 7:
-            
                 printf("Sending invite!\n");
-                printf("Excess: %s\t", excess);
-                char *inviteClientID, inviteSessionID;
-                char *token= strtok(excess, " ");
-                strcpy(inviteClientID, token);
-                token= strtok(NULL, " ");
-                strcpy(inviteSessionID, token);
-                printf("inviteClientID: %s\t", inviteClientID);
-                printf("inviteSessionID: %s\t", inviteSessionID);
-                packetToSend = makeInvitePacket(clientIDStr, inviteClientID, &inviteSessionID);    
+                //char *inviteClientID, *inviteSessionID;
+                //if (input[strlen(input)-1] == '\n')  input[strlen(input)-1] = '\0';
+                //const char s[2]= " ";
+                char sessionToJoin[1000];
+                char personToInvite[1000];
+                char inviteStr[7];
+
+                sscanf(input, "%s %s %s", inviteStr, personToInvite, sessionToJoin);
+                printf("invite: %s\n", inviteStr);
+                printf("person to invite: %s\n",personToInvite);
+                printf("session to invite: %s\n",sessionToJoin);
+
+                
+                // char *token;
+                // token = strtok(input, s);
+                // printf( " %s\n", token );
+                // token = strtok(NULL, s);
+                // printf( " %s\n", token );
+                // strcpy(inviteClientID,token);
+                // //inviteClientID=token;
+                // token = strtok(NULL, s);
+                // printf( " %s\n", token ); 
+                // inviteSessionID= token;
+                // printf("inviteClientID: %s\t", inviteClientID);
+                // printf("inviteSessionID: %s\t", inviteSessionID);
+                packetToSend = makeInvitePacket(clientIDStr, personToInvite, sessionToJoin); 
+                
                 ptrToPacketToSend = &packetToSend;
+                printf("INVIDE PACKET: \n");
+                printPacket(ptrToPacketToSend);   
 
             break;
             default:
@@ -331,8 +302,6 @@ int main(int argc, char *argv[]){
                     printf("\nWill send packet: \n");
                     printPacket(ptrToPacketToSend);
                     int numBytes = write(sockfd, ( void *)ptrToPacketToSend, sizeof(packetToSend));
-                    writeTime = clock();
-                    printf("WriteTIme : %lu\n", writeTime);
                     //int numBytes = sendto(sockfd, ( void *)ptrToPacketToSend, sizeof(packetToSend), 0, (struct sockaddr *)(servAddrPtr->ai_addr), servAddrPtr->ai_addrlen);
                     
                     if (numBytes < 0){
@@ -354,8 +323,6 @@ int main(int argc, char *argv[]){
             printf("\nWill send packet: \n");
             printPacket(ptrToPacketToSend);
             int numBytes = write(sockfd, ( void *)ptrToPacketToSend, sizeof(packetToSend));
-            writeTime = clock();
-            printf("WriteTIme : %lu\n", writeTime);
             //int numBytes = sendto(sockfd, ( void *)ptrToPacketToSend, sizeof(packetToSend), 0, (struct sockaddr *)(servAddrPtr->ai_addr), servAddrPtr->ai_addrlen);
             if (numBytes < 0){
                 perror("Client failed sending stringToSend!\n");

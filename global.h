@@ -15,22 +15,27 @@
 #include <time.h>
 #include <math.h>
 #include <pthread.h>
-// /login Yi_Ling password1 127.0.0.1 5050
-// /login Emily password2 127.0.0.1 5050
-// /login Ian password3 127.0.0.1 5050
-// /login Angus password4 123 127.0.0.1 5050
-// /login Anne password5 123 127.0.0.1 5050
-// /createsession JRE420
-// /createsession ECE334 
-// /createsession ECE361 
-// /joinsession JRE420
-// /joinsession ECE334 
-// /joinsession ECE361 
-// /leavesession ECE361 
-// /leavesession ECE334 
-// /leavesession ECE361 
-// /invite Emily ECE361
-// /list
+// 
+
+/*
+/login Emily password2 127.0.0.1 5055
+/createsession ha
+/login Ian password3 127.0.0.1 5055
+/invite Ian ha
+/login Angus password4 123 127.0.0.1 5050
+/login Anne password5 123 127.0.0.1 5050
+/createsession JRE420
+/createsession ECE334 
+/createsession ECE361 
+/joinsession JRE420
+/joinsession ECE334 
+/joinsession ECE361 
+/leavesession ECE361 
+/leavesession ECE334 
+/leavesession ECE361 
+/invite Emily ECE361
+/list
+*/
 // /quit
 #define DATA_SIZE 1000
 #define MAX_FILEDATA_SIZE 400
@@ -42,6 +47,38 @@
 
 bool firstClient = true;
 
+
+typedef struct clientStruct{
+    int clientFD;
+    unsigned char clientID[MAXBUFLEN];
+    char pw[MAXBUFLEN];
+    bool loggedIn;
+    //currentSess will be the last joinsession's session
+    unsigned char currentSess[MAXBUFLEN];
+    unsigned char sessionID[MAX_ARR_SIZE][MAXBUFLEN];
+    int nextAvailIndex;
+    pthread_t tid;
+    bool quit;
+    struct clientStruct * next;
+}User;
+
+typedef struct session{
+    char sessionID[MAXBUFLEN];
+    //User * clientsInSession;
+    int numClients;
+    int clientsInSess[MAX_ARR_SIZE];    //store the acceptFD's
+    int nextAvailIndex;
+    struct session *next;
+}Session;
+
+
+//global client and session lists
+User * clientList = NULL; //head
+User * lastClient = NULL;
+
+Session *sessionList = NULL;
+Session *lastSession = NULL;
+
 /*
 ./server 3030
 ./deliver
@@ -50,19 +87,5 @@ bool firstClient = true;
 /createsession haha
 /list
 */
-
-
-#ifdef WIN32
-    #include <winsock2.h>
-#else
-    #include <sys/socket.h>
-#endif
-
-#ifndef SOL_TCP
-    #define SOL_TCP 6  // socket options TCP level
-#endif
-#ifndef TCP_USER_TIMEOUT
-    #define TCP_USER_TIMEOUT 18  // how long for loss retry before timeout [ms]
-#endif
 
 #endif
