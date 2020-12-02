@@ -162,31 +162,16 @@ struct message processPacket(struct message incomingPacket, User *current){
             //memset(emptyUnsignedChar, 0, sizeof(emptyUnsignedChar));
             if(memcmp(current -> currentSess, "",MAXBUFLEN)!=0){
                 message= true;
-                printf("Send message!\n");
                 packetToSend = makeMessagePacket((char *)current->clientID, (char *) incomingPacket.data);
-                printf("99999999999\n");
                 //find that session 
                 Session *tempSess= sessionList;
-                printf("GGGGGGGGGGGGGGGGG\n");
                 while(tempSess!=NULL){
                     struct message * ptrToPacketToSend;
-                     printf("DDDDDDDDDDDD\n");
-                     printf("Client's sessipn ID: %s\n", current->currentSess);
-                     printf("Temp sess ID: %s\n", tempSess->sessionID);
-                     printf("String compare: %d\n", strcmp((char *)current->currentSess, tempSess->sessionID));
-                     if(strcmp((char *)current->currentSess, tempSess->sessionID)==0){
-                         printf("They are the same!\n");
-                        printf("--------------111-----------\n");
-                        printf("Find session!\n");
-                        // User *tempUser= tempSess->clientsInSession;
-                        // while(tempUser!=NULL){
+                    if(strcmp((char *)current->currentSess, tempSess->sessionID)==0){
                         for(int i = 0; i < tempSess -> nextAvailIndex; i++){
                             ptrToPacketToSend = &packetToSend;
-                            printf("--------------zzz-----------\n");
                             if(tempSess -> clientsInSess[i]!=-1){
-                                printf("--------------***-----------\n");
                                 int sendBytes = write(tempSess -> clientsInSess[i], ptrToPacketToSend, sizeof(struct message));
-                                printf("sendBytes: %d\n", sendBytes);
                             }
                         } 
                         break;
@@ -264,14 +249,6 @@ void *handle(void *tempUser){
                     close(newUser->clientFD);
                     continue;
                 }
-                // printf("After read:\n");
-
-                // printf("bytes received from client: %d\n",recvBytes);
-
-                // if(recvBytes < 0){
-                //     perror("Error receiving!\n");
-                //     exit(EXIT_FAILURE);
-                // }
 
                 printf("\nReceiving packet: \n");
                 printPacket(incomingPacket);

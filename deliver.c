@@ -50,10 +50,7 @@ void *receiveMessage(){
     while(1){
         
         numBytes= read(sockfd, ( void *)serverPacket, sizeof(struct message));
-            printf("Deliver numbytes line 50: %d\n", numBytes);
-
         printPacket(serverPacket);
-
         switch(serverPacket->type){
             case 5:
                 printf("JN_ACK: Successfully join session\n"); 
@@ -65,6 +62,9 @@ void *receiveMessage(){
             case 9: 
                 printf("NS_ACK: Successful new session\n");
                 inSession=true;
+                break;
+            case 10:
+                printf("MESSAGE: The message sent to the session is: %s\n",serverPacket->data);
                 break;
             case 12: 
                 printf("QU_ACK: Users and sessions: %s\n", serverPacket->data);
@@ -99,7 +99,7 @@ void *receiveMessage(){
                 printf("INVITE_NAK: Unsuccessful invite, reason: %s\n", serverPacket -> data);
                 break;
             default:
-                printf("\n\n\n----------Unknown packet received!--------\n");
+                printf("\n\n----------Unknown packet received!----------\n\n");
                 break;  
         }  
     }
@@ -235,9 +235,7 @@ int main(int argc, char *argv[]){
                 packetToSend = makeLeaveSessPacket(clientIDStr, leaveSessionID);
                 ptrToPacketToSend = &packetToSend;
                 iveLoggedIn = false;
-
                 break;
-
 
             //create session 
             case 4:

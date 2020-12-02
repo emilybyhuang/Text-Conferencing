@@ -200,7 +200,7 @@ bool sessionIsValid(char sessID[]){
 }
 
 bool joinSession(char sessID[], User * client, char * reasonForFailure){ 
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     //1.check if session exists in the complete session list
     Session * currSess = sessionList;
     bool validSessID=false;
@@ -229,14 +229,13 @@ bool joinSession(char sessID[], User * client, char * reasonForFailure){
     }
    
     //already in this session
-    //for(int i = 0; i < client -> nextAvailIndex; i++){
-        printf("Checking for if it's already in this session\n");
-       if(strcmp((char*)client -> currentSess ,sessID)==0){
-            char whyFailed[] = "Can't join session: you are already in this session!\n";
-            strcpy(reasonForFailure, whyFailed);
-            return false;
-        }
-    //}
+    printf("Checking for if it's already in this session\n");
+    if(strcmp((char*)client -> currentSess ,sessID)==0){
+        char whyFailed[] = "Can't join session: you are already in this session!\n";
+        strcpy(reasonForFailure, whyFailed);
+        return false;
+    }
+    
 
 
     //currentSession now points to the session the user wants to join

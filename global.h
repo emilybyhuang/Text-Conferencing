@@ -18,9 +18,9 @@
 // 
 
 /*
-/login Emily password2 127.0.0.1 5055
+/login Emily password2 127.0.0.1 5050
 /createsession ha
-/login Ian password3 127.0.0.1 5055
+/login Ian password3 127.0.0.1 5050
 /invite Ian ha
 /login Angus password4 123 127.0.0.1 5050
 /login Anne password5 123 127.0.0.1 5050
