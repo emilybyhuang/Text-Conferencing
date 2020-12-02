@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 //  5050
 // /login me 123 127.0.0.1 5050
 // /login hi 123 127.0.0.1 5050
@@ -21,7 +20,6 @@ char * emptyData = "";
 enum dataCtrlType {LOGIN_TYPE, LO_ACK, LO_NAK, EXIT_SERVER, JOIN, JN_ACK,JN_NAK, 
 LEAVE_SESS, NEW_SESS, NS_ACK, MESSAGE, QUERY, QU_ACK, LEAVE_ACK, NS_NAK, LEAVE_NAK, EXIT_ACK, EXIT_NAK,CLIENT_LOGOUT, INVITATION, INVITE_ACK, INVITE_NAK};
 //    7         8       9       10      11      12      13         14       15         16      17          18          19         20                21
-
 
 enum clientCommands {LOGIN, LOGOUT, JOINSESSION, LEAVESESSION, CREATESESSION, LIST, QUIT, INVITE};
 
@@ -72,7 +70,7 @@ struct message makeLoginPacket(char * clientID, char * pw){
 }
 
 struct message makeQuitPacketAck(unsigned char * clientID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     printf("Quit packet\n");
     struct message Msg;
     Msg.size = 0;
@@ -85,7 +83,7 @@ struct message makeQuitPacketAck(unsigned char * clientID){
 
 //need makeLogoutPacket....
 struct message makeLogoutPacket(char * clientID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = CLIENT_LOGOUT;
     Msg.size = 0;
@@ -98,7 +96,7 @@ struct message makeLogoutPacket(char * clientID){
 
 
 struct message makeJoinSessPacket(char * clientID, char * sessionID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = JOIN;
     Msg.size = strlen((char *)sessionID);
@@ -108,7 +106,7 @@ struct message makeJoinSessPacket(char * clientID, char * sessionID){
 }
 
 struct message makeLeaveSessPacket(char *clientID, char * sessionID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = LEAVE_SESS;
     Msg.size = strlen((char *)sessionID);
@@ -119,7 +117,7 @@ struct message makeLeaveSessPacket(char *clientID, char * sessionID){
 }
 
 struct message makeInvitePacket(char *clientID, char *inviteID,  char * sessionID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     int inviteFD;
     struct message Msg;
     // char serverIP[20], serverPortNum[40];
@@ -130,7 +128,7 @@ struct message makeInvitePacket(char *clientID, char *inviteID,  char * sessionI
     strcat(packetData, inviteID);
     strcat(packetData, ",");
     strcat(packetData, sessionID);
-    //printf("invite packet data: %s\n",packetData);
+    printf("invite packet data: %s\n",packetData);
     
     Msg.type = INVITATION;
     Msg.size = strlen((char *)packetData);
@@ -144,7 +142,7 @@ struct message makeInvitePacket(char *clientID, char *inviteID,  char * sessionI
 }
 
 struct message makeInviteAckPacket(char * clientID, struct message incomingPacket, char * sessionToJoin, char * whoToJoin){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     char packetData[MAXBUFLEN] = {'\0'};
     unsigned char ucPacketData[MAXBUFLEN],ucClientID[MAX_NAME];
@@ -165,7 +163,7 @@ struct message makeInviteAckPacket(char * clientID, struct message incomingPacke
 }
 
 struct message makeInviteNakPacket(User * client, char * reasonFailed){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = INVITE_NAK;
     Msg.size = strlen((char * )reasonFailed);
@@ -174,8 +172,11 @@ struct message makeInviteNakPacket(User * client, char * reasonFailed){
     return Msg;
 }
 
+
+
+
 struct message makeCreateSessPacket(char *clientID, char * sessionID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = NEW_SESS;
     Msg.size = strlen((char *)sessionID);
@@ -190,7 +191,7 @@ struct message makeQuitPacket(){
 */
 
 struct message makeLoAckPacket(User * client){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = LO_ACK;
     Msg.size = 0;
@@ -201,7 +202,7 @@ struct message makeLoAckPacket(User * client){
 }
 
 struct message makeLoNakPacket(User * client, char * reasonFailed){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = LO_NAK;
     Msg.size = strlen((char * )reasonFailed);
@@ -211,7 +212,7 @@ struct message makeLoNakPacket(User * client, char * reasonFailed){
 }
 
 struct message makeJnAckPacket(User * client, unsigned char * sessionID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = JN_ACK;
     Msg.size = strlen((char *)sessionID);
@@ -221,7 +222,7 @@ struct message makeJnAckPacket(User * client, unsigned char * sessionID){
 }
 
 struct message makeJnNakPacket(User * client, unsigned char * sessionID, char * reasonFailed){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
 
     unsigned char ucPacketData[MAXBUFLEN];//,ucClientID[MAX_NAME];
     // sscanf(str, "%s %s %s %s", clientID, pw, serverIP, serverPortNum);
@@ -248,7 +249,7 @@ struct message makeJnNakPacket(User * client, unsigned char * sessionID, char * 
 
 
 struct message makeNsAckPacket(User * client, char * sessionID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = NS_ACK;
     Msg.size = strlen(sessionID);
@@ -258,7 +259,7 @@ struct message makeNsAckPacket(User * client, char * sessionID){
 }
 
 struct message makeNsNakPacket(User * client, char * whyCantCreateSession){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = NS_NAK;
     Msg.size = strlen(whyCantCreateSession);
@@ -268,7 +269,7 @@ struct message makeNsNakPacket(User * client, char * whyCantCreateSession){
 }
 
 struct message makeLeaveAckPacket(User * client, unsigned char * sessionID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = LEAVE_ACK;
     Msg.size = strlen((char *)sessionID);
@@ -278,7 +279,7 @@ struct message makeLeaveAckPacket(User * client, unsigned char * sessionID){
 }
 
 struct message makeLeaveNakPacket(User * client, unsigned char * sessionID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = LEAVE_NAK;
     Msg.size = strlen((char *)sessionID);
@@ -289,7 +290,7 @@ struct message makeLeaveNakPacket(User * client, unsigned char * sessionID){
 
 
 struct message makeMessagePacket(char *clientID, char * messageData){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = MESSAGE;
     Msg.size = strlen((char *)messageData);
@@ -299,7 +300,7 @@ struct message makeMessagePacket(char *clientID, char * messageData){
 }
 
 struct message makeQueryPacket(char *clientID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = QUERY;
     Msg.size = 0;
@@ -311,7 +312,7 @@ struct message makeQueryPacket(char *clientID){
 //!!!not sure what is expected
 //To: add list of usrs and sessions
 struct message makeQuAckPacket(unsigned char *clientID){
-    printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
+    //printf("This is %s() from %s, line %d\n",__FUNCTION__, __FILE__, __LINE__);
     struct message Msg;
     Msg.type = QU_ACK;
     char sessionListArr[1000];
@@ -327,9 +328,9 @@ struct message makeQuAckPacket(unsigned char *clientID){
     }
 
     while(tempSess!=NULL){
-        printf("In Packet.h line 267\n");
+        //printf("In Packet.h line 267\n");
         if (tempSess->numClients!=0){ 
-        printf("Session not empty!\n");
+        //printf("Session not empty!\n");
         strcat(sessionListArr, tempSess->sessionID);
         strcat(sessionListArr, "\t");
         }
@@ -338,7 +339,7 @@ struct message makeQuAckPacket(unsigned char *clientID){
 
     }
 
-    printf("Session list: %s\n", sessionListArr);
+    //printf("Session list: %s\n", sessionListArr);
     if (tempClient==NULL){
        strcat(userListArr, "Empty!");
     }
@@ -348,13 +349,13 @@ struct message makeQuAckPacket(unsigned char *clientID){
         if(tempClient -> next != NULL)tempClient = tempClient -> next;
         else break;
     }
-    printf("User list: %s\n", userListArr);
+    //printf("User list: %s\n", userListArr);
     
     strcat(userListArr, "\n");
     strcat(userListArr, sessionListArr);
 
     memcpy(Msg.data, (unsigned char *)userListArr, sizeof(Msg.data));
-    printf("Msg.data: %s\n", Msg.data);
+    //printf("Msg.data: %s\n", Msg.data);
 
     memcpy(Msg.data, (char *)userListArr, sizeof(Msg.data));
     Msg.size = strlen((char *)userListArr);

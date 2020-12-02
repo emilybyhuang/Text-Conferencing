@@ -15,27 +15,22 @@
 #include <time.h>
 #include <math.h>
 #include <pthread.h>
-// 
-
-/*
-/login Emily password2 127.0.0.1 5050
-/createsession ha
-/login Ian password3 127.0.0.1 5050
-/invite Ian ha
-/login Angus password4 123 127.0.0.1 5050
-/login Anne password5 123 127.0.0.1 5050
-/createsession JRE420
-/createsession ECE334 
-/createsession ECE361 
-/joinsession JRE420
-/joinsession ECE334 
-/joinsession ECE361 
-/leavesession ECE361 
-/leavesession ECE334 
-/leavesession ECE361 
-/invite Emily ECE361
-/list
-*/
+// /
+// /login Emily password2 127.0.0.1 5050
+// /login Ian password3 127.0.0.1 5050
+// /login Angus password4 123 127.0.0.1 5050
+// /login Anne password5 123 127.0.0.1 5050
+// /createsession JRE420
+// /createsession ECE334 
+// /createsession ECE361 
+// /joinsession JRE420
+// /joinsession ECE334 
+// /joinsession ECE361 
+// /leavesession ECE361 
+// /leavesession ECE334 
+// /leavesession ECE361 
+// /invite Emily ECE361
+// /list
 // /quit
 #define DATA_SIZE 1000
 #define MAX_FILEDATA_SIZE 400

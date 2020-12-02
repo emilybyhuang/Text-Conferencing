@@ -1,19 +1,18 @@
-
 #include "clientSession.h"
 #include "packet.h" 
   
 #define BACKLOG 20 
 bool message=false;
 int numUserConnected=0;
-
+int cancelThreadID;
 pthread_mutex_t sessionList_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t userList_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t numUserConnected_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 struct message processPacket(struct message incomingPacket, User *current){
-    printf("\n\nEnterring process packet, client looks like:\n");
-    printClientStruct(current);
+    //printf("\n\nEnterring process packet, client looks like:\n");
+    //printClientStruct(current);
     bool removed;
     struct message packetToSend;
     //process the packet 
@@ -28,18 +27,18 @@ struct message processPacket(struct message incomingPacket, User *current){
     char * token = NULL;
     int fdToSend;
     bool sessionValid;
-
     switch (incomingPacket.type){
         //follow the types according to the enumeration
         case 0: //login: store the clientID in the client list
             printf("Its a login!\n");
             //struct clientStruct * currentClient;
             //verify if client already logged in or already existing
+            //bool addSuccess=false;
             //strcpy(current->clientID, (unsigned char *) incomingPacket.source);
             pthread_mutex_lock(&userList_mutex);
             addSuccess = addToClientList(current);
             pthread_mutex_unlock(&userList_mutex);
-            printf("^^^^^Add success : %d\n",addSuccess);
+            //printf("^^^^^Add success : %d\n",addSuccess);
 
             if (addSuccess){
                 printf("Login sucess!\n");
@@ -55,7 +54,7 @@ struct message processPacket(struct message incomingPacket, User *current){
                     strcpy(clientpw, token);
                     token = strtok(NULL, ",");
                 }
-                printf("packetdata: '%s'\n", packetData);
+                //printf("packetdata: '%s'\n", packetData);
                 strcpy(current -> pw,clientpw);
                 //do LO_ACK
                 packetToSend = makeLoAckPacket(current);
@@ -70,24 +69,36 @@ struct message processPacket(struct message incomingPacket, User *current){
 
         case 3:
             printf("It's a quit!\n");
+            int clientFDTemp= current->clientFD;
+            char tempClientID[100];
             //printf("It's a logout!\n");
+            
+            strcpy(tempClientID,(char*)current->clientID);
+
+            tempClientID[strlen((char*) current->clientID)]='\0';
+               
+            //printf("tempClientID: %s\n", tempClientID);
             pthread_mutex_lock(&userList_mutex);
             removed = removeFromClientList(current);
             pthread_mutex_unlock(&userList_mutex);
+            pthread_mutex_lock(&numUserConnected_mutex);
+            numUserConnected--;
+            pthread_mutex_lock(&numUserConnected_mutex);
             message=false;
-            current->quit=true;
-            packetToSend= makeQuitPacketAck(current->clientID);
-            
-        break;
-          case 18:
+            packetToSend.type=-9;
+            close(clientFDTemp);
+            return packetToSend;
+            break;
+        case 18:
             printf("It's a logout!\n");
             //remove all sessions in this client
                 //call leave session within
             if(current -> loggedIn == false){
                 makeLogoutNakPacket(current -> clientID, "You're not even logged in");
             }
+            char * whyFailed = malloc(sizeof(char));
             removeAllUsersSessions(current,whyFailed);
-            printf("Removed all sessions\n");
+            //printf("Removed all sessions\n");
             removed = removeFromClientList(current);
             current -> loggedIn = false;
             if(removed){
@@ -104,7 +115,7 @@ struct message processPacket(struct message incomingPacket, User *current){
             //joining
             // joinSuccess = joinSession((char *)incomingPacket.data, current->clientFD, joinReasonForFailure, current->loggedIn); 
             joinSuccess = joinSession((char *)incomingPacket.data, current,whyFailed);
-             printf("\n&&&&   IN SERVER: %s\n", whyFailed);
+            //printf("\n&&&&   IN SERVER: %s\n", whyFailed);
             if (joinSuccess) {
                 printf("Sucessfuly joined session!\n");
                 //create Jn_ack packet
@@ -128,10 +139,10 @@ struct message processPacket(struct message incomingPacket, User *current){
             pthread_mutex_unlock(&sessionList_mutex);
 
             if(leaveSuccess){
-                printf("Sucessfuly left session!\n");
+                //printf("Sucessfuly left session!\n");
                 packetToSend = makeLeaveAckPacket(current, incomingPacket.data);
             }else{
-                printf("Can't leave session!\n");
+                //printf("Can't leave session!\n");
                 packetToSend = makeLeaveNakPacket(current, incomingPacket.data);
             }
             
@@ -144,20 +155,20 @@ struct message processPacket(struct message incomingPacket, User *current){
             createSuccess = createSession((unsigned char *)incomingPacket.data, current, whyFailed); 
             pthread_mutex_unlock(&sessionList_mutex);
 
-            printf("createsession: %d\n",createSuccess);
+            //printf("createsession: %d\n",createSuccess);
             if(createSuccess) {
-                printf("Sucessfuly Created session!\n");
+                //printf("Sucessfuly Created session!\n");
                 //create Jn_ack packet
                 packetToSend = makeNsAckPacket(current, (char *)incomingPacket.data);
             }else{
-                printf("Unsucessful!\n");
+                //printf("Unsucessful!\n");
                 packetToSend = makeNsNakPacket(current, whyFailed);
             }
             free(whyFailed);
             message=false;
             break;
 
-        case 10: //message 
+         case 10: //message 
             //unsigned char emptyUnsignedChar[MAXBUFLEN] = {};
             //memset(emptyUnsignedChar, 0, sizeof(emptyUnsignedChar));
             if(memcmp(current -> currentSess, "",MAXBUFLEN)!=0){
@@ -189,7 +200,7 @@ struct message processPacket(struct message incomingPacket, User *current){
             packetToSend = makeQuAckPacket(current->clientID);
             message=false;
             break;
-        case 19://Invite
+      case 19://Invite
             printf("Invite!\n");
             
             token = strtok(packetData, ",");
@@ -201,13 +212,13 @@ struct message processPacket(struct message incomingPacket, User *current){
             }
             fdToSend = returnInviteFD(person,whyFailed);
             sessionValid = sessionIsValid(sessionIDInvite);
-            printf("sessionValid: %d\n", sessionValid);
+            //printf("sessionValid: %d\n", sessionValid);
             if(fdToSend == -1){
                 //invalid: nak  
                 packetToSend = makeInviteNakPacket(current, whyFailed);//send it to inviter
                 //need to send this to the client
             }else if(sessionValid != 1){
-                strcpy(whyFailed, "This session doesn't exist.\n");
+                //strcpy(whyFailed, "This session doesn't exist.\n");
                 packetToSend = makeInviteNakPacket(current, whyFailed);//send it to inviter
             }else{
                 packetToSend = makeInviteAckPacket((char*)current->clientID, incomingPacket, sessionIDInvite, person);//want to sent it to invitee
@@ -222,21 +233,23 @@ struct message processPacket(struct message incomingPacket, User *current){
     }
 
     if(whyFailed == NULL)free(whyFailed);
-    printf("Exiting process packet, client looks like:\n");
+    //printf("Exiting process packet, client looks like:\n");
     printClientStruct(current); 
     return packetToSend;
 }
 
+
 void *handle(void *tempUser){
-        User *newUser = malloc(sizeof(User));
-        newUser = (User *) tempUser;
+        // User *newUser = malloc(sizeof(User));
+        // newUser = (User *) tempUser;
+        User * newUser = (User *) tempUser;
         struct message * incomingPacket;
         struct message packetToSend;
         struct message * ptrToPacketToSend;
         int recvBytes;
 
             while(1){
-                printf("\n\n****************************\n");
+                //printf("\n\n****************************\n");
                 incomingPacket = (struct message * ) malloc (sizeof (struct message));
                 // printf("Before read:\n");
                 // printf("reading from: %d\n",newUser->clientFD);
@@ -249,27 +262,38 @@ void *handle(void *tempUser){
                     close(newUser->clientFD);
                     continue;
                 }
+                // printf("After read:\n");
+
+                // printf("bytes received from client: %d\n",recvBytes);
+
+                // if(recvBytes < 0){
+                //     perror("Error receiving!\n");
+                //     exit(EXIT_FAILURE);
+                // }
 
                 printf("\nReceiving packet: \n");
                 printPacket(incomingPacket);
 
                 //before processing packet, fill in user info as much as possible
                 packetToSend = processPacket(*incomingPacket,newUser);
-                printf("\n###Server's gonna send:\n");
+                printf("\nServer's gonna send:\n");
                 printPacket(&packetToSend);
 
                 ptrToPacketToSend = &packetToSend;
-                
+                if(packetToSend.type==-9) {
+                    //printf("DONT SEND AN ACK ITS A QUIT!\n");
+                    pthread_exit(&cancelThreadID);
+                }
                 if(!message){
-                int sendBytes = write(newUser->clientFD, ptrToPacketToSend, sizeof(struct message));
-                printf("sendBytes: %d\n", sendBytes);
-                   if (sendBytes==-1)  printf("------------Sent!-----------------\n");
+                    int sendBytes = write(newUser->clientFD, ptrToPacketToSend, sizeof(struct message));
+                    //printf("sendBytes: %d\n", sendBytes);
+                    //if (sendBytes==-1)  printf("------------Sent!-----------------\n");
                 }
-                if(newUser->quit==true){
-                    printf("User wants to exit server!\n");
-                    newUser->clientFD = -1;
-                    close(newUser->clientFD);
-                }
+                // if(newUser->quit!=true){
+                //     printf("User wants to exit server!\n");
+                //     newUser->clientFD = -1;
+                //     close(newUser->clientFD);
+                // }
                 //clean up for next round
                 free(incomingPacket);
                 incomingPacket = NULL;
