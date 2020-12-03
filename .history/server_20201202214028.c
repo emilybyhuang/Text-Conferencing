@@ -234,6 +234,8 @@ struct message processPacket(struct message incomingPacket, User *current){
                 packetToSend = makeInviteAckPacket((char*)current->clientID, incomingPacket, sessionIDInvite, person);//want to sent it to invitee
                 int inviteClientBytes = write(fdToSend, &packetToSend, sizeof(struct message));
             }
+            free(whyFailed);
+            whyFailed = NULL;
             message=false;
             break;
         default:  
@@ -241,7 +243,7 @@ struct message processPacket(struct message incomingPacket, User *current){
             break;
     }
 
-    if(whyFailed != NULL)free(whyFailed);
+    if(whyFailed == NULL)free(whyFailed);
     //printf("Exiting process packet, client looks like:\n");
     printClientStruct(current); 
     return packetToSend;

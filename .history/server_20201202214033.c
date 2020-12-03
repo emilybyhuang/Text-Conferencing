@@ -241,7 +241,7 @@ struct message processPacket(struct message incomingPacket, User *current){
             break;
     }
 
-    if(whyFailed != NULL)free(whyFailed);
+    if(whyFailed == NULL)free(whyFailed);
     //printf("Exiting process packet, client looks like:\n");
     printClientStruct(current); 
     return packetToSend;

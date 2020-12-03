@@ -105,9 +105,8 @@ struct message processPacket(struct message incomingPacket, User *current){
                 packetToSend = makeLogoutAckPacket(current->clientID);
             }else{
                 packetToSend = makeLogoutNakPacket(current->clientID, whyFailed);
-                free(whyFailed);
-                whyFailed = NULL;
             }
+            free(whyFailed);
             firstClient = true;
             message= false;
             break;
@@ -128,11 +127,9 @@ struct message processPacket(struct message incomingPacket, User *current){
                 printf("Can't join session !\n");
                  //make jn_nak packet
                 packetToSend = makeJnNakPacket(current, incomingPacket.data,whyFailed);
-                free(whyFailed);
-                whyFailed = NULL;
-
             }
             message=false;
+            free(whyFailed); 
             break;
            
         case 7: //leavesession
@@ -147,11 +144,10 @@ struct message processPacket(struct message incomingPacket, User *current){
             }else{
                 //printf("Can't leave session!\n");
                 packetToSend = makeLeaveNakPacket(current, incomingPacket.data);
-                free(whyFailed);
-                whyFailed = NULL;
             }
             
             message=false;
+            free(whyFailed);
             break;
         case 8: //create session 
             printf("creating session!\n");
@@ -165,12 +161,10 @@ struct message processPacket(struct message incomingPacket, User *current){
                 //create Jn_ack packet
                 packetToSend = makeNsAckPacket(current, (char *)incomingPacket.data);
             }else{
-                printf("Unsucessful!\n");
+                //printf("Unsucessful!\n");
                 packetToSend = makeNsNakPacket(current, whyFailed);
-                free(whyFailed);
-                whyFailed = NULL;
             }
-            
+            free(whyFailed);
             message=false;
             break;
 
@@ -222,18 +216,15 @@ struct message processPacket(struct message incomingPacket, User *current){
             if(fdToSend == -1){
                 //invalid: nak  
                 packetToSend = makeInviteNakPacket(current, whyFailed);//send it to inviter
-                free(whyFailed);
-                whyFailed = NULL;
                 //need to send this to the client
             }else if(sessionValid != 1){
                 //strcpy(whyFailed, "This session doesn't exist.\n");
                 packetToSend = makeInviteNakPacket(current, whyFailed);//send it to inviter
-                free(whyFailed);
-                whyFailed = NULL;
             }else{
                 packetToSend = makeInviteAckPacket((char*)current->clientID, incomingPacket, sessionIDInvite, person);//want to sent it to invitee
                 int inviteClientBytes = write(fdToSend, &packetToSend, sizeof(struct message));
             }
+            free(whyFailed);
             message=false;
             break;
         default:  
@@ -241,7 +232,7 @@ struct message processPacket(struct message incomingPacket, User *current){
             break;
     }
 
-    if(whyFailed != NULL)free(whyFailed);
+    if(whyFailed == NULL)free(whyFailed);
     //printf("Exiting process packet, client looks like:\n");
     printClientStruct(current); 
     return packetToSend;
